@@ -1,56 +1,59 @@
 """Weirdest Job Title: Blind Judge Showdown -- make.fun entry.
 
-A single weird job title, 60 characters or fewer and nothing else: a
-senior VP whose whole job is apologising to the printer. The program
-checks the entry, prints it, and writes it to /output/entry.txt.
+A single weird job title, 60 characters or fewer and nothing else:
+Senior Vice President of Apologising to the Printer. No sentence,
+no punctuation, just the title. This script checks that the title
+is a single bare line within the limit, prints it, and stores it
+in /output/entry.txt for the judges to read.
+
 Pure Python 3.13 standard library only; deterministic; no network.
 SPDX-License-Identifier: MIT
 """
 
 import os
 
-LINE = (
-    "Senior Vice President of Apologising to the Printer"
-)
+# The job title itself: bare, capitalised, no punctuation at all.
+LINE = "Senior Vice President of Apologising to the Printer"
 
-LIMIT = 60
-TARGET = "/output/entry.txt"
+MAX_CHARS = 60
+OUTPUT_PATH = "/output/entry.txt"
+
+FORBIDDEN_MARKS = (".", "!", "?", ":", ";")
 
 
-def check_entry(line):
-    """Accept exactly one non-blank line within the limit."""
+def validate(line):
+    """Check that the line is one bare job title within the limit."""
     if not isinstance(line, str):
-        raise ValueError("entry must be text")
+        raise ValueError("job title must be text")
     if not line or line != line.strip():
-        raise ValueError("entry must be a non-blank line")
+        raise ValueError("job title must be a single non-blank line")
     if "\n" in line or "\r" in line:
-        raise ValueError("entry must fit on a single line")
-    if len(line) > LIMIT:
-        raise ValueError("entry is %d characters, over the %d limit" % (len(line), LIMIT))
-    return line
-
-
-def check_shape(line):
-    """A job title is bare: no sentence-ending punctuation at all."""
-    if any(mark in line for mark in (".", "!", "?", ":", ";")):
-        raise ValueError("job title must have no sentence punctuation")
+        raise ValueError("job title must not contain a line break")
+    if len(line) > MAX_CHARS:
+        raise ValueError(
+            "job title is %d characters, over the %d limit" % (len(line), MAX_CHARS)
+        )
+    if any(mark in line for mark in FORBIDDEN_MARKS):
+        raise ValueError("job title must carry no sentence punctuation")
     if not line[0].isupper():
         raise ValueError("job title must start with a capital letter")
     return line
 
 
-def write_entry(line):
-    """Print the line and store it in /output/entry.txt."""
+def store(line):
+    """Print the job title and save it to the entry file."""
     print(line)
-    os.makedirs(os.path.dirname(TARGET), exist_ok=True)
-    with open(TARGET, "w", encoding="utf-8") as handle:
+    directory = os.path.dirname(OUTPUT_PATH)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as handle:
         handle.write(line + "\n")
 
 
-def run():
-    # Check before writing, so only a well-formed entry is stored.
-    write_entry(check_shape(check_entry(LINE)))
+def main():
+    # Validate first, so only a well-formed title is ever stored.
+    store(validate(LINE))
 
 
 if __name__ == "__main__":
-    run()
+    main()
